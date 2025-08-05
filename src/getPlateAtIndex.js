@@ -14,44 +14,51 @@ function getPlateAtIndex(n) {
   const DIGITS = '0123456789';
   const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  // Convert a number to a custom base with left zero padding
+  // Convert a number to a string in a custom base, padded to length
   function toBase(value, charset, length) {
     const base = charset.length;
     let result = '';
-
     do {
       result = charset[value % base] + result;
       value = Math.floor(value / base);
     } while (value > 0);
-
-    while (result.length < length) {
-      result = charset[0] + result;
-    }
-
-    return result;
+    return charset[0].repeat(length - result.length) + result;
   }
 
-  if (!Number.isInteger(n) || n < 0) {
-    throw new Error('Invalid index: must be a non-negative integer');
+  // 1. Validate input type
+  if (!Number.isInteger(n)) {
+    throw new Error('Index must be an integer');
   }
 
-  const TOTAL_DIGIT_ONLY = 10 ** 6; // 000000 to 999999
+  // 2. Validate negative
+  if (n < 0) {
+    throw new Error('Index must be a non-negative integer');
+  }
 
+  // 3. Calculate max index (last valid plate = ZZZZZZ)
+  const TOTAL_DIGIT_ONLY = 10 ** 6;
+  let maxIndex = TOTAL_DIGIT_ONLY;
+  for (let letterCount = 1; letterCount <= 6; letterCount++) {
+    maxIndex += 10 ** (6 - letterCount) * 26 ** letterCount;
+  }
+
+  if (n >= maxIndex) {
+    throw new Error(`Index exceeds the maximum allowed value: ${maxIndex - 1}`);
+  }
+
+  // Return digit-only plates
   if (n < TOTAL_DIGIT_ONLY) {
     return toBase(n, DIGITS, 6);
   }
 
+  // Calculate hybrid plate
   let remaining = n - TOTAL_DIGIT_ONLY;
   let letterCount = 1;
   let groupSize = 10 ** (6 - letterCount) * 26 ** letterCount;
 
-  // Find how many letters the plate should have
   while (remaining >= groupSize) {
     remaining -= groupSize;
     letterCount++;
-    if (letterCount > 6) {
-      throw new Error('Exceeded maximum plate length');
-    }
     groupSize = 10 ** (6 - letterCount) * 26 ** letterCount;
   }
 
